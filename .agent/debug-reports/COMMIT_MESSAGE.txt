@@ -1,0 +1,38 @@
+fix(test-input): Add band type validation to prevent tester-task mismatch
+
+PROBLEM:
+- Testers with BAND_HIGH were being assigned to BAND_LOW tasks (and vice versa)
+- Found 16+ cases of band mismatch in recent 100 records
+- Risk: Incorrect scoring standards
+
+ROOT CAUSE:
+- Missing validation at final assignment points
+- 3 functions updated tester_id without calling validateTesterBandType()
+
+CHANGES:
+1. TestInputService::transferTaskAnotherTester() - Added validation before transferring task
+2. TestInputService::autoAssignTestInput() - Added validation before auto-assignment
+3. TestInputService::updateTesterId() - Added validation for come check/mark hand operations
+
+All 3 functions now call validateTesterBandType() before updating tester_id.
+This ensures testers are only assigned to tasks matching their band type.
+
+IMPACT:
+- High severity bug fixed
+- User will now get clear error message: "Không thể gán tester band X cho test band Y"
+- Prevents incorrect test scoring
+
+SCRIPTS ADDED:
+- scripts/find_band_mismatches.php - Find existing band mismatches
+- scripts/fix_band_mismatch.php - Fix existing data (unassign mismatched testers)
+
+NEXT STEPS:
+- Run fix_band_mismatch.php to clean existing data
+- Reassign proper testers to unassigned tasks
+- Add tests for validation
+
+REFERENCES:
+- .agent/debug-reports/band-mismatch-summary.md
+- .agent/debug-reports/band-mismatch-analysis.md
+
+Issue: BAND-MISMATCH-2026-01-20

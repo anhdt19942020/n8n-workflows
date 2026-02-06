@@ -1,0 +1,383 @@
+{
+  "name": "SEO web Multi-Prompt",
+  "nodes": [
+    {
+      "parameters": {
+        "notice": "",
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1200,
+        -160
+      ],
+      "id": "c50b65fd-4642-46df-b80e-313213832e05",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {
+          "dataMode": "DEFINE",
+          "dataLocationOnSheets": "headerRow",
+          "headerRow": 1,
+          "outputMethod": "appendToJsonKeys",
+          "outputRowNumbers": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1008,
+        -160
+      ],
+      "id": "184b238c-8435-4309-8472-358045618212",
+      "name": "Read Pending Tasks"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\n\nreturn $input.all().filter(item => {\n  const row = item.json;\n  \n  // 1. Check Status (skip if Success)\n  if (row.status === 'Success') return false;\n\n  // 2. Check Date with multiple formats\n  let dateStr = row.date;\n  if (!dateStr) return false;\n\n  let rowDate;\n  // Check for DD/MM/YYYY format\n  if (dateStr.includes('/')) {\n    const parts = dateStr.split('/');\n    if (parts.length === 3) {\n      // Assume DD/MM/YYYY: parts[0]=Day, parts[1]=Month, parts[2]=Year\n      // Month is 0-indexed in JS Date\n      rowDate = new Date(parts[2], parts[1] - 1, parts[0]);\n    }\n  }\n  \n  // Fallback if not parsed above\n  if (!rowDate || isNaN(rowDate.getTime())) {\n    rowDate = new Date(dateStr);\n  }\n\n  if (isNaN(rowDate.getTime())) return false;\n\n  // Using <= now ensures that if the date is Today, it runs.\n  // (Set time to 00:00:00 for strict date comparison if needed, but rowDate usually defaults to 00:00)\n  return rowDate <= now;\n});",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -160
+      ],
+      "id": "a1b2c3d4-e5f6-4789-9012-34567890abcd",
+      "name": "Filter Tasks"
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=CRITICAL: You MUST return ONLY valid JSON. No markdown, no explanations, no code fences. Start your response with { and end with }.\n\nYou are an expert SEO copywriter. Create a landing page in Vietnamese based on this request:\n{{ $json.prompt }}\n\nYou MUST return this EXACT JSON structure (all fields required, Vietnamese content):\n{\n  \"meta_title\": \"SEO title 55-60 chars\",\n  \"meta_description\": \"SEO description 140-160 chars\",\n  \"slug\": \"url-slug-khong-dau\",\n  \"h1\": \"Main heading\",\n  \"excerpt\": \"Brief summary\",\n  \"content_markdown\": \"Full article content in markdown\",\n  \"focus_keywords\": [\"keyword1\", \"keyword2\"],\n  \"tags\": [\"tag1\", \"tag2\"],\n  \"faq\": [{\"q\":\"Question?\",\"a\":\"Answer\"}],\n  \"schema_jsonld\": \"LocalBusiness schema as string\"\n}\n\nFocus on Hanoi local SEO. RETURN ONLY THE JSON OBJECT.",
+              "role": "user"
+            }
+          ]
+        },
+        "simplify": true,
+        "jsonOutput": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        -160
+      ],
+      "id": "e12908d6-a045-4332-9641-10129fb533f9",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2gaPiIbYTzL7tQRw",
+          "name": "Gemini Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\n\n// Gemini response structure: { parts: [{ text: '...' }], role: 'model' }\nlet s = String(item?.parts?.[0]?.text || item?.text || '').trim();\nif (!s) throw new Error('No content from Gemini.');\n\n// 1. Extract content between first { and last }\nconst start = s.indexOf('{');\nconst end = s.lastIndexOf('}');\nif (start === -1 || end === -1 || end <= start) throw new Error('No JSON found.');\ns = s.slice(start, end + 1);\n\n// 2. Custom Dirty JSON Parser for LLM Output\n// This function handles unescaped newlines inside strings manually.\nfunction parseDirtyJson(str) {\n    try {\n        return JSON.parse(str);\n    } catch (e) {\n        // Continue to fix attempt\n    }\n\n    // Tokenizer-style approach to find strings and escape text inside them\n    let result = '';\n    let i = 0;\n    let inString = false;\n    let escapeMode = false;\n\n    while (i < str.length) {\n        const char = str[i];\n        \n        if (inString) {\n            if (escapeMode) {\n                // Just copy the escaped char\n                result += char;\n                escapeMode = false;\n            } else if (char === '\\\\') {\n                result += char;\n                escapeMode = true;\n            } else if (char === '\"') {\n                result += char;\n                inString = false;\n            } else if (char === '\\n') {\n                // FOUND IT: A literal newline inside a string -> Escape it!\n                result += '\\\\n';\n            } else if (char === '\\r') {\n                // Ignore CR inside string\n            } else if (char === '\\t') {\n                result += '\\\\t';\n            } else {\n                result += char;\n            }\n        } else {\n            // Not in string\n            if (char === '\"') {\n                inString = true;\n            }\n            result += char;\n        }\n        i++;\n    }\n\n    // Try parsing the sanitized result\n    try {\n        return JSON.parse(result);\n    } catch (e) {\n        // Last resort: forceful regex for specific known keys if general parse fails\n        // (Optional: returning null here lets the main error handler show the failure)\n        return null;\n    }\n}\n\nconst data = parseDirtyJson(s);\n\nif (!data) {\n     throw new Error('JSON Parse Failed. Preview:\\n' + s.slice(0, 500));\n}\n\n// CRITICAL: Preserve row_number from Filter Tasks node for later update\nconst filterTasksData = $('Filter Tasks').first().json;\nreturn [{ json: data, row_number: filterTasksData.row_number }];",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        -160
+      ],
+      "id": "36f557d3-aca4-4814-ba39-e4aafa856aba",
+      "name": "Parse JSON"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "curlImport": "",
+        "method": "POST",
+        "url": "https://suanhagiarehn.vn/wp-json/wp/v2/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{$json.h1}}"
+            },
+            {
+              "name": "content",
+              "value": "={{$json.content_markdown}}"
+            },
+            {
+              "name": "slug",
+              "value": "={{$json.slug}}"
+            },
+            {
+              "name": "status",
+              "value": "draft"
+            },
+            {
+              "name": "excerpt",
+              "value": "={{$json.excerpt}}"
+            }
+          ]
+        },
+        "options": {},
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -48,
+        -144
+      ],
+      "id": "3be5ba74-7a19-42ae-96f6-8b12611b4393",
+      "name": "HTTP Request",
+      "credentials": {
+        "wordpressApi": {
+          "id": "5KIKE8eeTLIMdcPY",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-wp-post-id",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        -144
+      ],
+      "id": "check-wp-success-node-id",
+      "name": "Check WP Success"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columnToMatchOn": "row_number",
+        "valueToMatchOn": "={{ $('Parse JSON').first().json.row_number }}",
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=DONE | WP_ID={{ $json.id }} | {{ $json.link || $json.guid?.rendered }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        336,
+        -240
+      ],
+      "id": "98765432-10fe-4ba9-8765-432109876543",
+      "name": "Update Status Success"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columnToMatchOn": "row_number",
+        "valueToMatchOn": "={{ $('Parse JSON').first().json.row_number }}",
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=ERROR | {{ $json.message || \"WP POST FAILED\" }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        336,
+        -48
+      ],
+      "id": "update-error-node-id",
+      "name": "Update Status Error"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Pending Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pending Tasks": {
+      "main": [
+        [
+          {
+            "node": "Filter Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Tasks": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Check WP Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check WP Success": {
+      "main": [
+        [
+          {
+            "node": "Update Status Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Status Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "pinData": {}
+}

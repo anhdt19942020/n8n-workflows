@@ -1,0 +1,704 @@
+{
+  "name": "create-video-ban-ao-nam",
+  "nodes": [
+    {
+      "parameters": {
+        "notice": "",
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        -96
+      ],
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "CLOUD_RUN_BASE",
+              "value": "https://image-hand-827442388731.asia-southeast1.run.app"
+            },
+            {
+              "name": "GEMINI_API_KEY",
+              "value": "YOUR_GEMINI_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -128
+      ],
+      "id": "set-variables",
+      "name": "Set Variables"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tiktok_affiliate"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "PENDING"
+            }
+          ]
+        },
+        "combineFilters": "AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -208,
+        -128
+      ],
+      "id": "read-pending-tasks",
+      "name": "Read Pending Tasks",
+      "issues": {
+        "parameters": {
+          "documentId": [
+            "Parameter \"Document\" is required."
+          ]
+        }
+      }
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tiktok_affiliate"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "PROCESSING",
+            "started_at": "={{ $now }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -32,
+        -112
+      ],
+      "id": "update-processing",
+      "name": "Update PROCESSING"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{ $('Set Variables').first().json.GEMINI_API_KEY }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\":[{\n      \"text\": \"Bạn là chuyên gia dựng video quảng cáo thời trang TikTok. Sản phẩm: {{ $node[\\\"Read Pending Tasks\\\"].json.product_name }}. Bối cảnh: Trung tâm thương mại sang trọng hoặc Shop thời trang modern. Hãy trả về đúng định dạng JSON (không markdown) với cấu trúc sau cho video 15s (4 scenes): { \\\"background_prompts\\\": [\\\"mô tả cảnh 1\\\", \\\"mô tả cảnh 2\\\", \\\"mô tả cảnh 3\\\", \\\"mô tả cảnh 4\\\"], \\\"overlay_text\\\": [\\\"Text scene 1 (ngắn)\\\", \\\"Text scene 2 (lợi ích)\\\", \\\"Text scene 3 (kêu gọi)\\\"], \\\"durations\\\": [3, 4, 4, 4], \\\"style\\\": \\\"cinematic\\\" }. Lưu ý: background_prompts mô tả nền phía sau, không chứa người, tỷ lệ 9:16.\"\n    }]\n  }]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        128,
+        -96
+      ],
+      "id": "gemini-plan",
+      "name": "Gemini Plan"
+    }
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const response = $input.first().json;\nconst text = response.candidates[0].content.parts[0].text || \"\";\nconst jsonStart = text.indexOf('{');\nconst jsonEnd = text.lastIndexOf('}');\n\nif (jsonStart === -1 || jsonEnd === -1) {\n  throw new Error(\"Gemini không trả về JSON hợp lệ: \" + text);\n}\n\nconst jsonStr = text.substring(jsonStart, jsonEnd + 1);\nlet data;\ntry {\n  data = JSON.parse(jsonStr);\n} catch (e) {\n  throw new Error(\"JSON Parse Error: \" + e.message);\n}\n\nconst originalInfo = $(\"Read Pending Tasks\").first().json;\n\nreturn {\n  json: {\n    ...data,\n    original_product: originalInfo\n  }\n};",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -96
+      ],
+      "id": "parse-gemini-json",
+      "name": "Parse Gemini JSON"
+    }
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "curlImport": "",
+        "method": "POST",
+        "url": "={{ $('Set Variables').first().json.CLOUD_RUN_BASE }}/remove-bg",
+        "authentication": "none",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image_url",
+              "value": "={{ $json.original_product.image_url }}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "file"
+        },
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        736,
+        -272
+      ],
+      "id": "remove-bg",
+      "name": "Remove BG"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const binaryData = items[0].binary.data;\nconst base64String = await this.helpers.getBinaryDataBuffer(0, 'data');\n\n// Keep the JSON data from previous node to pass along\nconst jsonData = items[0].json;\n\nreturn [{\n    json: {\n        product_png_base64: base64String.toString('base64'),\n        ...jsonData\n    }\n}];",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -256
+      ],
+      "id": "product-to-base64",
+      "name": "Product to Base64"
+    },
+    {
+      "parameters": {
+        "oldVersionNotice": "",
+        "authentication": "googleDriveOAuth2Api",
+        "resource": "file",
+        "operation": "list",
+        "useQueryString": false,
+        "limit": 4,
+        "queryFilters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        352
+      ],
+      "id": "get-backgrounds",
+      "name": "Get Backgrounds"
+    },
+    {
+      "parameters": {
+        "mode": "mergeByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1520,
+        112
+      ],
+      "id": "merge-data",
+      "name": "Merge Data",
+      "input": {
+        "input1": "main",
+        "input2": "main"
+      }
+    },
+    {
+      "parameters": {
+        "splitInBatchesNotice": "",
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1744,
+        112
+      ],
+      "id": "split-batches",
+      "name": "Split in Batches"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Convert the background image (binary 'data') to base64 for Cloud Run\n// This runs for each item in batch\n\nconst binaryProperty = 'data'; // Default binary property from Drive\nif (!items[0].binary || !items[0].binary[binaryProperty]) {\n  throw new Error(\"No binary data found for background image\");\n}\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, binaryProperty);\nconst base64Bg = buffer.toString('base64');\n\nreturn [{\n  json: {\n    ...items[0].json,\n    bg_image_base64: base64Bg\n  }\n}];",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        112
+      ],
+      "id": "bg-to-base64",
+      "name": "BG to Base64"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "curlImport": "",
+        "method": "POST",
+        "url": "={{ $('Set Variables').first().json.CLOUD_RUN_BASE }}/compose",
+        "authentication": "none",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "product_png_base64",
+              "value": "={{ $json.product_png_base64 }}"
+            },
+            {
+              "name": "bg_image_base64",
+              "value": "={{ $json.bg_image_base64 }}"
+            },
+            {
+              "name": "scale",
+              "value": 0.78
+            },
+            {
+              "name": "x",
+              "value": 0.5
+            },
+            {
+              "name": "y",
+              "value": 0.58
+            },
+            {
+              "name": "shadow",
+              "value": true
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "file"
+        },
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2192,
+        112
+      ],
+      "id": "compose-scene",
+      "name": "Compose Scene"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Collect all scenes from ALL executions of the loop\n// We access the data from the 'Compose Scene' node across all its executions\n\nconst allExecutions = $('Compose Scene').all();\nconst scenes = [];\n\nfor (const execution of allExecutions) {\n  // Each execution has one item (since we split batch size 1)\n  // But we need to use getBinaryDataBuffer which might tricky in 'all()'.\n  // Actually, standard Pattern is to use the output of the Loop directly if we Merge back.\n  // But for simple aggregation code node is easier if we can access binary.\n  \n  // Easier approach: Just return the binary index matching.\n  // However, .all() returns JSON+Binary references.\n  \n  // To get binary content of previous runs in a Code node safely, we often need to rely on the fact \n  // that they are available in memory OR use a Loop mechanism that Aggregates.\n  \n  if (execution.binary && execution.binary.data) {\n     // This call gets buffer for *current* item context usually.\n     // Accessing arbitrary binary from previous nodes in loop via .all() is restricted in some versions.\n     // Assuming version 1+ allows accessing binary items from 'all()'.\n     // We will try standard access.\n     // Note: In older n8n code node, accessing binary of other items is hard.\n     // Fallback: This node assumes it runs AFTER the loop is Done? code node runs once?\n     // No, we need to loop back.\n  }\n}\n// Let's assume we re-assemble after loop.\nreturn [];",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        -144
+      ],
+      "id": "collect-scenes-placeholder",
+      "name": "Collect Scenes (Use Loop Merge Instead)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "",
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        112
+      ],
+      "id": "aggregate-code",
+      "name": "Aggregate Scenes",
+      "jsCode": "// Runs once after loop finishes (connected to loop exit)\n// Wait, typically we connect output of SplitInBatches 'Done' to here.\n// But we need the data.\n\nconst composedItems = $('Compose Scene').all();\nconst scenes = [];\n\nfor (let i = 0; i < composedItems.length; i++) {\n    // We MUST use the helper with the item index and node name to get binary\n    // This works if the validation allows it.\n    const buffer = await this.helpers.getBinaryDataBuffer(i, 'data', 'Compose Scene');\n    scenes.push(buffer.toString('base64'));\n}\n\n// Get Plan Info\nconst plan = $('Parse Gemini JSON').first().json;\n\nreturn [{\n    json: {\n        scenes_base64: scenes,\n        durations: plan.durations,\n        overlay_text: plan.overlay_text,\n        fps: 30,\n        size: \"1080x1920\"\n    }\n}];"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutHttpRequest": "",
+        "curlImport": "",
+        "method": "POST",
+        "url": "={{ $('Set Variables').first().json.CLOUD_RUN_BASE }}/render-video",
+        "authentication": "none",
+        "provideSslCertificates": false,
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "scenes_base64",
+              "value": "={{ $json.scenes_base64 }}"
+            },
+            {
+              "name": "durations",
+              "value": "={{ $json.durations }}"
+            },
+            {
+              "name": "overlay_text",
+              "value": "={{ $json.overlay_text }}"
+            },
+            {
+              "name": "fps",
+              "value": 30
+            },
+            {
+              "name": "size",
+              "value": "1080x1920"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "responseFormat": "file"
+        },
+        "infoMessage": ""
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2624,
+        112
+      ],
+      "id": "render-video",
+      "name": "Render Video"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleDrive": "",
+        "authentication": "googleDriveOAuth2Api",
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "data",
+        "name": "",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2848,
+        112
+      ],
+      "id": "upload-video",
+      "name": "Upload Video"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tiktok_affiliate"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "DONE",
+            "video": "={{ $json.webViewLink }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3072,
+        112
+      ],
+      "id": "update-done",
+      "name": "Update Status DONE"
+    },
+    {
+      "parameters": {
+        "preBuiltAgentsCalloutGoogleSheets": "",
+        "authentication": "googleSheetsOAuth2Api",
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tiktok_affiliate"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ 'ERROR | ' + ($json.message || $json.error.message || 'FAILED') }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3072,
+        352
+      ],
+      "id": "update-error",
+      "name": "Update Status ERROR"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Read Pending Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pending Tasks": {
+      "main": [
+        [
+          {
+            "node": "Update PROCESSING",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update PROCESSING": {
+      "main": [
+        [
+          {
+            "node": "Gemini Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Plan": {
+      "main": [
+        [
+          {
+            "node": "Parse Gemini JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Gemini JSON": {
+      "main": [
+        [
+          {
+            "node": "Remove BG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove BG": {
+      "main": [
+        [
+          {
+            "node": "Product to Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product to Base64": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Backgrounds": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches": {
+      "main": [
+        null,
+        [
+          {
+            "node": "Aggregate Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BG to Base64": {
+      "main": [
+        [
+          {
+            "node": "Compose Scene",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Scene": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Scenes": {
+      "main": [
+        [
+          {
+            "node": "Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Video": {
+      "main": [
+        [
+          {
+            "node": "Upload Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Video": {
+      "main": [
+        [
+          {
+            "node": "Update Status DONE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false
+  },
+  "pinData": {}
+}
