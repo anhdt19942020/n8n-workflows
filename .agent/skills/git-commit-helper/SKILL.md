@@ -26,6 +26,7 @@ Format chuẩn:
   │       └─ Phạm vi thay đổi (Service, Controller, Module, hoặc tên file chính)
   └─ Loại thay đổi (feat, fix, docs, style, refactor, test, chore)
 ```
+Ngỗn ngữ: Tiếng Việt
 
 ### Các Loại (Types) Phổ Biến
 

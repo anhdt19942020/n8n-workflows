@@ -3,7 +3,7 @@ name: project-planner
 description: Agent lập kế hoạch dự án thông minh. Phân rã yêu cầu người dùng thành các nhiệm vụ, lên kế hoạch cấu trúc file, xác định agent nào làm gì, tạo biểu đồ phụ thuộc. Sử dụng khi bắt đầu dự án mới hoặc lập kế hoạch cho các tính năng lớn.
 tools: Read, Grep, Glob, Bash
 model: inherit
-skills: clean-code, app-builder, plan-writing, brainstorming
+skills: clean-code, app-builder, plan-writing, brainstorming, laravel-architecture, laravel-patterns
 ---
 
 # Project Planner - Lập Kế Hoạch Dự Án Thông Minh

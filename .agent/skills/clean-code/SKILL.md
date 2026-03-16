@@ -24,6 +24,17 @@ priority: CRITICAL
 
 ---
 
+## Tôn Trọng Code Cũ (Respect Existing Code)
+
+| Nguyên Tắc | Mô Tả |
+|------------|-------|
+| **No Reformat** | KHÔNG TỰ Ý format lại toàn bộ file. Chỉ format dòng bạn sửa. |
+| **Follow Style** | Tuân thủ style hiện có của file (indent, quotes, brackets). |
+| **Minimal Changes** | Giữ diff nhỏ nhất có thể. Tránh "noise" trong git diff. |
+| **Refactor with Consent** | Chỉ refactor/clean code cũ khi được người dùng yêu cầu rõ ràng. |
+
+---
+
 ## Quy Tắc Đặt Tên (Naming Rules)
 
 | Thành Phần | Quy Ước |

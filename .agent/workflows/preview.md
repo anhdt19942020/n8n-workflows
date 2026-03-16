@@ -6,7 +6,12 @@ description: Preview server start, stop, and status check. Local development ser
 
 $ARGUMENTS
 
----
+> 🔴 **BẮT BUỘC (Khởi tạo Serena):**
+> Trước khi thực hiện bất kỳ công việc nào trong lệnh này, Agent PHẢI:
+> 1. Gọi \`mcp_serena_check_onboarding_performed\`
+> 2. Gọi \`mcp_serena_activate_project\` với đường dẫn thư mục hiện tại.
+> (Bỏ qua nếu Serena đã được kích hoạt trong phiên làm việc này).
+
 
 ## Tác Vụ
 

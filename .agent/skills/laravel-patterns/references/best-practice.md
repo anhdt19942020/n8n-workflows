@@ -1,338 +1,294 @@
-# Best Practice - Control Flow
+Laravel 12 Best Practices
+Comprehensive best practices guide for Laravel 12 applications. Contains 45+ rules across 8 categories for building scalable, maintainable Laravel applications.
 
-> **Pattern**: Clean Code & Control Flow
-> **Scope**: `app/**/*.php`
-> **Priority**: P0 (Critical)
-> **Always Apply**: true
+When to Apply
+Reference these guidelines when:
 
----
+Creating controllers, models, and services
+Writing migrations and database queries
+Implementing validation and form requests
+Building APIs with Laravel
+Structuring Laravel applications
+Rule Categories by Priority
+Priority	Category	Impact	Prefix
+1	Architecture & Structure	CRITICAL	arch-
+2	Eloquent & Database	CRITICAL	eloquent-
+3	Controllers & Routing	HIGH	controller-, ctrl-
+4	Validation & Requests	HIGH	validation-, valid-
+5	Security	HIGH	sec-
+6	Performance	MEDIUM	perf-
+7	API Design	MEDIUM	api-
+Quick Reference
+1. Architecture & Structure (CRITICAL)
+arch-service-classes - Extract business logic to services
+arch-action-classes - Single-purpose action classes
+arch-repository-pattern - When to use repositories
+arch-dto-pattern - Data transfer objects
+arch-value-objects - Encapsulate domain concepts
+arch-event-driven - Decouple with events and listeners
+arch-feature-folders - Organize by domain/feature
+2. Eloquent & Database (CRITICAL)
+eloquent-eager-loading - Prevent N+1 queries
+eloquent-chunking - Process large datasets
+eloquent-query-scopes - Reusable query logic
+eloquent-model-events - Use observers for side effects
+eloquent-relationships - Define relationships properly
+eloquent-casts - Automatic attribute casting
+eloquent-accessors-mutators - Transform attributes
+eloquent-soft-deletes - Safe deletion with recovery
+eloquent-pruning - Automatic cleanup of old records
+3. Controllers & Routing (HIGH)
+ctrl-resource-controllers - Use resource controllers
+controller-single-action - Single action invokable controllers
+controller-resource-methods - RESTful resource methods
+controller-form-requests - Use form requests
+controller-api-resources - Transform API responses
+controller-middleware - Apply middleware properly
+controller-dependency-injection - Inject dependencies
+4. Validation & Requests (HIGH)
+validation-form-requests - Use form request classes
+validation-custom-rules - Create custom rules
+validation-conditional-rules - Conditional validation
+validation-array-validation - Validate nested arrays
+validation-after-hooks - Complex validation logic
+5. Security (HIGH)
+sec-mass-assignment - Protect against mass assignment
+Additional security rules can be added as needed
+6. Performance (MEDIUM)
+Performance rules can be added for caching, queues, and optimization
+7. API Design (MEDIUM)
+API design rules can be added for versioning and response formatting
+Essential Patterns
+Controller with Form Request
+<?php
 
-## 🎯 Mục Đích
+namespace App\Http\Controllers;
 
-Giảm độ phức tạp của code bằng cách:
-- ✅ Giảm `if/else`
-- ✅ Giảm độ lồng nhau (nesting)
-- ✅ Code dễ đọc, dễ maintain
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use App\Models\Post;
+use Illuminate\Http\RedirectResponse;
 
----
-
-## 1️⃣ Guard Clause / Early Return
-
-Ưu tiên **return sớm** để giảm lồng nhau.
-
-### ✅ Đúng
-
-```php
-public function processOrder(Order $order): void
+class PostController extends Controller
 {
-    if (!$order->isPaid()) {
-        return; // Early return
+    public function store(StorePostRequest $request): RedirectResponse
+    {
+        // Validation happens automatically
+        $validated = $request->validated();
+
+        $post = Post::create($validated);
+
+        return redirect()
+            ->route('posts.show', $post)
+            ->with('success', 'Post created successfully.');
     }
-    
-    if ($order->isShipped()) {
-        return; // Early return
-    }
-    
-    // Happy path - không lồng sâu
-    $this->shipOrder($order);
-    $this->sendNotification($order);
-}
-```
 
-### ❌ Sai
+    public function update(UpdatePostRequest $request, Post $post): RedirectResponse
+    {
+        $post->update($request->validated());
 
-```php
-public function processOrder(Order $order): void
-{
-    if ($order->isPaid()) {
-        if (!$order->isShipped()) {
-            // Lồng 2 cấp
-            $this->shipOrder($order);
-            $this->sendNotification($order);
-        }
-    }
-}
-```
-
----
-
-## 2️⃣ Cấm `else` Sau `return`
-
-Nếu nhánh `if` đã `return`, **KHÔNG dùng `else`**.
-
-### ✅ Đúng
-
-```php
-public function getDiscount(User $user): float
-{
-    if ($user->isPremium()) {
-        return 0.2;
-    }
-    
-    if ($user->isRegular()) {
-        return 0.1;
-    }
-    
-    return 0.0;
-}
-```
-
-### ❌ Sai
-
-```php
-public function getDiscount(User $user): float
-{
-    if ($user->isPremium()) {
-        return 0.2;
-    } else { // ❌ else không cần thiết
-        if ($user->isRegular()) {
-            return 0.1;
-        } else {
-            return 0.0;
-        }
-    }
-}
-```
-
----
-
-## 3️⃣ Giới Hạn Độ Lồng
-
-**Không lồng `if` quá 1 cấp**.
-
-### ✅ Đúng - Tách Method
-
-```php
-public function processUser(User $user): void
-{
-    if (!$this->canProcess($user)) {
-        return;
-    }
-    
-    $this->doProcess($user);
-}
-
-private function canProcess(User $user): bool
-{
-    return $user->isActive() 
-        && $user->hasPermission('process')
-        && !$user->isBanned();
-}
-```
-
-### ❌ Sai - Lồng Sâu
-
-```php
-public function processUser(User $user): void
-{
-    if ($user->isActive()) {
-        if ($user->hasPermission('process')) {
-            if (!$user->isBanned()) {
-                // Lồng 3 cấp!
-                $this->doProcess($user);
-            }
-        }
+        return redirect()
+            ->route('posts.show', $post)
+            ->with('success', 'Post updated successfully.');
     }
 }
-```
+Form Request Class
+<?php
 
----
+namespace App\Http\Requests;
 
-## 4️⃣ Tách Điều Kiện Thành Method
+use Illuminate\Foundation\Http\FormRequest;
 
-Đặt tên theo **ý định**, không để điều kiện dài.
-
-### ✅ Đúng
-
-```php
-public function completeExam(Exam $exam): void
+class StorePostRequest extends FormRequest
 {
-    if (!$this->canComplete($exam)) {
-        throw new DomainException("Cannot complete exam");
+    public function authorize(): bool
+    {
+        return $this->user()->can('create', Post::class);
     }
-    
-    if ($this->shouldMoveToGrading($exam)) {
-        $this->moveToGrading($exam);
+
+    public function rules(): array
+    {
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string', 'min:100'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['exists:tags,id'],
+            'published_at' => ['nullable', 'date', 'after:now'],
+        ];
     }
-    
-    $this->markAsCompleted($exam);
-}
 
-private function canComplete(Exam $exam): bool
-{
-    return $exam->status === ExamStatusEnum::IN_PROGRESS->value
-        && $exam->endTime <= now();
-}
-
-private function shouldMoveToGrading(Exam $exam): bool
-{
-    return $exam->type === ExamTypeEnum::RETAKE->value
-        && $exam->hasAllAnswers();
-}
-```
-
-### ❌ Sai - Điều Kiện Dài
-
-```php
-public function completeExam(Exam $exam): void
-{
-    if ($exam->status === ExamStatusEnum::IN_PROGRESS->value && $exam->endTime <= now()) {
-        // Điều kiện dài, khó đọc
-        if ($exam->type === ExamTypeEnum::RETAKE->value && $exam->hasAllAnswers()) {
-            $this->moveToGrading($exam);
-        }
-        $this->markAsCompleted($exam);
+    public function messages(): array
+    {
+        return [
+            'body.min' => 'The post body must be at least 100 characters.',
+        ];
     }
 }
-```
+Service Class Pattern
+<?php
 
----
+namespace App\Services;
 
-## 5️⃣ Strategy Pattern (Thay Thế if/else)
+use App\Models\User;
+use App\Models\Post;
+use App\Events\PostPublished;
+use Illuminate\Support\Facades\DB;
 
-Khi logic thay đổi theo **enum type/status** → Dùng Strategy.
-
-### ❌ Sai - Nhiều if/else
-
-```php
-public function calculateScore(Exam $exam): float
+class PostService
 {
-    if ($exam->type === ExamTypeEnum::RETAKE->value) {
-        // Logic retake
-        return $this->calculateRetakeScore($exam);
-    } elseif ($exam->type === ExamTypeEnum::REGULAR->value) {
-        // Logic regular
-        return $this->calculateRegularScore($exam);
-    } elseif ($exam->type === ExamTypeEnum::FINAL->value) {
-        // Logic final
-        return $this->calculateFinalScore($exam);
+    public function __construct(
+        private readonly NotificationService $notifications,
+    ) {}
+
+    public function publish(Post $post): Post
+    {
+        return DB::transaction(function () use ($post) {
+            $post->update([
+                'published_at' => now(),
+                'status' => 'published',
+            ]);
+
+            event(new PostPublished($post));
+
+            $this->notifications->notifyFollowers($post->author, $post);
+
+            return $post->fresh();
+        });
     }
-    
-    throw new DomainException("Unknown exam type");
 }
-```
+Eloquent Model
+<?php
 
-### ✅ Đúng - Strategy Pattern
+namespace App\Models;
 
-```php
-// Interface
-interface ScoreCalculatorInterface
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
+
+class Post extends Model
 {
-    public function calculate(Exam $exam): float;
+    use HasFactory;
+
+    protected $fillable = [
+        'title',
+        'slug',
+        'body',
+        'category_id',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'published_at' => 'datetime',
+    ];
+
+    // Relationships
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class)->withTimestamps();
+    }
+
+    // Scopes
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
+
+    public function scopeByCategory(Builder $query, int $categoryId): Builder
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    // Accessors & Mutators
+    protected function title(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value) => ucfirst($value),
+        );
+    }
 }
+Migration Best Practices
+<?php
 
-// Implementations
-class RetakeScoreCalculator implements ScoreCalculatorInterface { ... }
-class RegularScoreCalculator implements ScoreCalculatorInterface { ... }
-class FinalScoreCalculator implements ScoreCalculatorInterface { ... }
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// Service
-public function calculateScore(Exam $exam): float
+return new class extends Migration
 {
-    $calculator = $this->resolveCalculator($exam->type);
-    return $calculator->calculate($exam);
-}
+    public function up(): void
+    {
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->string('title');
+            $table->string('slug')->unique();
+            $table->text('body');
+            $table->timestamp('published_at')->nullable();
+            $table->timestamps();
 
-private function resolveCalculator(string $type): ScoreCalculatorInterface
-{
-    return match($type) {
-        ExamTypeEnum::RETAKE->value => app(RetakeScoreCalculator::class),
-        ExamTypeEnum::REGULAR->value => app(RegularScoreCalculator::class),
-        ExamTypeEnum::FINAL->value => app(FinalScoreCalculator::class),
-        default => throw new DomainException("Unknown type"),
-    };
-}
-```
+            // Indexes for common queries
+            $table->index(['user_id', 'published_at']);
+            $table->index('category_id');
+        });
+    }
 
----
-
-## 6️⃣ `match` Chỉ Cho Mapping Đơn Giản
-
-**KHÔNG viết logic dài** trong `match`.
-
-### ✅ Đúng - Mapping Class
-
-```php
-$handler = match($type) {
-    'create' => CreateHandler::class,
-    'update' => UpdateHandler::class,
-    default => DefaultHandler::class,
+    public function down(): void
+    {
+        Schema::dropIfExists('posts');
+    }
 };
-
-return app($handler)->handle($data);
-```
-
-### ❌ Sai - Logic Trong match
-
-```php
-$result = match($type) {
-    'create' => (function() use ($data) {
-        // 20 dòng logic...
-        $this->validate($data);
-        $this->create($data);
-        return $this->format($data);
-    })(),
-    'update' => (function() use ($data) {
-        // 30 dòng logic...
-    })(),
-};
-```
-
----
-
-## 7️⃣ Ràng Buộc Định Lượng
-
-### Quy Tắc Cứng
-
-Mỗi **public method** trong Service:
-- ✅ Tối đa **2 câu lệnh if**
-- ✅ Nếu vượt → Refactor sang private method hoặc strategy class
-
-### Ví Dụ
-
-```php
-// ✅ Đúng - Chỉ 2 if
-public function processTask(Task $task): void
-{
-    if (!$this->canProcess($task)) { // If 1
-        return;
-    }
-    
-    if ($this->needsValidation($task)) { // If 2
-        $this->validate($task);
-    }
-    
-    $this->doProcess($task);
+Eager Loading
+// ❌ N+1 Problem
+$posts = Post::all();
+foreach ($posts as $post) {
+    echo $post->author->name;  // Query per post
 }
 
-// ❌ Sai - Quá 2 if
-public function processTask(Task $task): void
-{
-    if (!$task->isActive()) { ... }      // If 1
-    if ($task->type === 'A') { ... }     // If 2
-    if ($task->userId > 0) { ... }       // If 3 ❌
-    if ($task->hasData()) { ... }        // If 4 ❌
+// ✅ Eager loading
+$posts = Post::with(['author', 'category', 'tags'])->get();
+foreach ($posts as $post) {
+    echo $post->author->name;  // No additional queries
 }
-```
 
----
+// ✅ Nested eager loading
+$posts = Post::with([
+    'author.profile',
+    'comments.user',
+    'tags',
+])->get();
 
-## 📋 Checklist
+// ✅ Constrained eager loading
+$posts = Post::with([
+    'comments' => fn ($query) => $query->latest()->limit(5),
+])->get();
+How to Use
+Read individual rule files for detailed explanations and code examples:
 
-Trước khi commit code:
+rules/arch-service-classes.md
+rules/eloquent-eager-loading.md
+rules/validation-form-requests.md
+rules/_sections.md
+Each rule file contains:
 
-- [ ] Dùng guard clause/early return
-- [ ] KHÔNG có `else` sau `return`
-- [ ] Không lồng `if` quá 1 cấp
-- [ ] Điều kiện phức tạp tách thành method boolean
-- [ ] Logic theo type/status → Strategy pattern
-- [ ] `match` chỉ mapping đơn giản
-- [ ] Mỗi public method ≤ 2 câu lệnh `if`
-
----
-
-## 🔗 Related Patterns
-
-- `service.md` - Service clean code
-- `common.md` - Common coding rules
-- `repository.md` - Query complexity
+YAML frontmatter with metadata (title, impact, tags)
+Brief explanation of why it matters
+Incorrect code example with explanation
+Correct code example with explanation
+Laravel 12 and PHP 8.5 specific context and references
+Full Compiled Document
+For the complete guide with all rules expanded: AGENTS.md

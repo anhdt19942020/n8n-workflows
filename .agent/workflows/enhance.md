@@ -6,13 +6,18 @@ description: Thêm hoặc cập nhật tính năng trong ứng dụng hiện có
 
 $ARGUMENTS
 
----
+> 🔴 **BẮT BUỘC (Khởi tạo Serena):**
+> Trước khi thực hiện bất kỳ công việc nào trong lệnh này, Agent PHẢI:
+>
+> 1. Gọi \`mcp_serena_check_onboarding_performed\`
+> 2. Gọi \`mcp_serena_activate_project\` với đường dẫn thư mục hiện tại.
+> (Bỏ qua nếu Serena đã được kích hoạt trong phiên làm việc này).
 
 ## Tác Vụ
 
 Lệnh này thêm các tính năng hoặc thực hiện cập nhật cho ứng dụng hiện có.
 
-### Các Bước:
+### Các Bước
 
 1. **Hiểu Trạng Thái Hiện Tại**
    - Tải trạng thái dự án với `session_manager.py`
@@ -24,6 +29,7 @@ Lệnh này thêm các tính năng hoặc thực hiện cập nhật cho ứng d
    - Kiểm tra dependencies
 
 3. **Trình Bày Kế Hoạch Cho Người Dùng** (cho các thay đổi lớn)
+
    ```
    "Để thêm admin panel:
    - Tôi sẽ tạo 15 file mới
@@ -42,11 +48,11 @@ Lệnh này thêm các tính năng hoặc thực hiện cập nhật cho ứng d
    - Hot reload hoặc khởi động lại
 
 6. **Generate Git Commit Message** (Chỉ Backend)
-   - Nếu là backend code (Laravel/Node.js/Python), tự động tạo commit message
+   - Nếu là backend code (Laravel/Node.js/Python), **TỰ ĐỘNG** tạo commit message — KHÔNG HỎI người dùng có muốn tạo hay không
    - Đọc `@[skills/git-commit-helper]` để tạo message chuẩn Conventional Commits
    - Phân tích thay đổi với `git diff --stat`
-   - Đề xuất commit message dạng: `<type>(<scope>): <summary>`
-   - Chờ người dùng xác nhận trước khi commit
+   - Đề xuất lệnh commit dạng: `git commit -m "<type>(<scope>): <summary>"`
+   - Người dùng sẽ tự xác nhận khi chạy lệnh
 
 ---
 

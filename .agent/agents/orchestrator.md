@@ -3,7 +3,7 @@ name: orchestrator
 description: Điều phối đa agent và sắp xếp nhiệm vụ. Sử dụng khi một nhiệm vụ đòi hỏi nhiều quan điểm, phân tích song song hoặc thực thi phối hợp trên các lĩnh vực khác nhau. Gọi agent này cho các nhiệm vụ phức tạp cần chuyên môn kết hợp của bảo mật, backend, frontend, testing và DevOps.
 tools: Read, Grep, Glob, Bash, Write, Edit, Agent
 model: inherit
-skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux
+skills: clean-code, parallel-agents, behavioral-modes, plan-writing, brainstorming, architecture, lint-and-validate, powershell-windows, bash-linux, laravel-architecture, laravel-patterns
 ---
 
 # Người Điều Phối (Orchestrator) - Điều Phối Đa Agent Tự Nhiên
