@@ -1,0 +1,924 @@
+{
+  "name": "Bếp nhà",
+  "nodes": [
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "video_reels",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "upload_phase",
+                "value": "start"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "24550a75-6576-4a9a-b8d3-25bb057194f5",
+      "name": "Upload Session",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "gifsvKWTRGEfUmB8",
+          "name": "bếp nhà rơm"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.upload_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "file_url",
+              "value": "=https://tikwm.com{{ $('Download Video').item.json.data.hdplay }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "fc1e6b4d-1ff7-4db3-8fae-f3240cea83ec",
+      "name": "Upload video",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "gifsvKWTRGEfUmB8",
+          "name": "bếp nhà rơm"
+        }
+      },
+      "notes": "Tác giả: Vũ Đức Hồng - 0986.209.305\nhttps://www.facebook.com/vuduchongdotcom\nhttps://www.youtube.com/@vuduchong"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "edge": "video_reels",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "video_id",
+                "value": "={{ $('Upload Session').item.json.video_id }}"
+              },
+              {
+                "name": "upload_phase",
+                "value": "finish"
+              },
+              {
+                "name": "video_state",
+                "value": "PUBLISHED"
+              },
+              {
+                "name": "description",
+                "value": "={{ $('Download Video').item.json.data.title }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        272
+      ],
+      "id": "1a569412-b97f-420a-882f-166529371e83",
+      "name": "Publish",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "gifsvKWTRGEfUmB8",
+          "name": "bếp nhà rơm"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "75f618be-0e4e-4f11-be0f-1a35b701384b",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        16
+      ],
+      "id": "e5895728-941d-4063-91f2-a5f0b7e8ae99",
+      "name": "Schedule Trigger",
+      "alwaysOutputData": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "graphApiVersion": "v23.0",
+        "node": "={{ $('Upload Session').item.json.video_id }}",
+        "options": {
+          "fields": {
+            "field": [
+              {
+                "name": "status"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        272
+      ],
+      "id": "849847a3-9cd2-4b66-8c70-bd0d9bd5bff8",
+      "name": "Get status",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "PBd95aaGVwqYwG1F",
+          "name": "review phim"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "graphApiVersion": "v23.0",
+        "node": "me",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        272,
+        256
+      ],
+      "id": "ecd36a19-ed1b-4570-979d-d67054c38f8a",
+      "name": "Get Page ID",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "PBd95aaGVwqYwG1F",
+          "name": "review phim"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM",
+          "mode": "list",
+          "cachedResultName": "Reel Facebook Thông Nguyễn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1795330513,
+          "mode": "list",
+          "cachedResultName": "bếp",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit#gid=1795330513"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        256
+      ],
+      "id": "07e1c7b0-63c1-41bd-9b3b-9daddcfeab74",
+      "name": "Get Link Shopee",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FXZLQAiXueripHj7",
+          "name": "bếp nhà rơm"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM",
+          "mode": "list",
+          "cachedResultName": "Reel Facebook Thông Nguyễn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tiktok",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gBA6yT9wkBGSRiYpOWzwLQb4K91dKN9Tqxiknixn2Jc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Get List Video').item.json.row_number }}",
+            "Trạng thái": "thành công",
+            "Video Facebook": "=fb.com/{{ $json.id }}_{{ $('Publish').item.json.post_id }}",
+            "Thời gian": "={{ $now.setZone(\"Asia/Ho_Chi_Minh\").toFormat(\"HH:mm:ss dd-MM-yyyy\") }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Video Tiktok",
+              "displayName": "Video Tiktok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Video Facebook",
+              "displayName": "Video Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Thời gian",
+              "displayName": "Thời gian",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trạng thái",
+              "displayName": "Trạng thái",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        256
+      ],
+      "id": "ee39aeae-fc82-4f06-a431-aad5bdef1802",
+      "name": "Update Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FXZLQAiXueripHj7",
+          "name": "bếp nhà rơm"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM",
+          "mode": "list",
+          "cachedResultName": "Reel Facebook Thông Nguyễn",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1795330513,
+          "mode": "list",
+          "cachedResultName": "bếp",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit#gid=1795330513"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -432,
+        16
+      ],
+      "id": "700f23c1-4cf3-48a2-849a-0d83478a8a6a",
+      "name": "Get List Video",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "FXZLQAiXueripHj7",
+          "name": "bếp nhà rơm"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://tikwm.com/api/",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json['Video Tiktok'] }}"
+            },
+            {
+              "name": "count",
+              "value": "12"
+            },
+            {
+              "name": "cursor",
+              "value": "0"
+            },
+            {
+              "name": "web",
+              "value": "1"
+            },
+            {
+              "name": "hd",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "15389b15-7551-4943-82a5-f347738c57d9",
+      "name": "Download Video",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        256
+      ],
+      "id": "9cf49cc0-20f0-4331-a75b-dfca9a006d04",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -432,
+        272
+      ],
+      "id": "21dbca16-5c83-4d71-b42b-8fc13334bf3b",
+      "name": "Wait 30s",
+      "webhookId": "baaa84b3-abbe-4d41-a2b4-5cf417a311ad"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        256
+      ],
+      "id": "9cfb62d5-1e48-4297-a341-9bfa31c90878",
+      "name": "Wait 10s",
+      "webhookId": "2cee889e-21fb-44d5-b7d2-3c05f3128c3c"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "={{ $('Get Page ID').item.json.id }}_{{ $('Publish').item.json.post_id }}",
+        "edge": "comments",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $json['Tên sản phẩm'] }}\n{{ $json.Link }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        272
+      ],
+      "id": "b966f04e-f16c-48c8-9cef-040d2d3aa2a1",
+      "name": "Comment",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "PBd95aaGVwqYwG1F",
+          "name": "review phim"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        272
+      ],
+      "id": "a33c01d3-4345-4ee6-9f67-9b8c3f284e12",
+      "name": "Wait 15s",
+      "webhookId": "49b22a48-b4b0-4392-aaa6-6f02e6f545e9"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zapps.me/bot<token>/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "chatid"
+            },
+            {
+              "name": "text",
+              "value": "=Đăng video hoàn thành\n- Video tiktok: {{ $('Get List Video').item.json['Video Tiktok'] }}\n- Video facebook: {{ $('Update Status').item.json['Video Facebook'] }}\n- Thời gian: {{ $('Update Status').item.json['Thời gian'] }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {}
+          },
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1344,
+        96
+      ],
+      "id": "4b53a299-9d0b-4620-b7ff-2a3d55836204",
+      "name": "Send message",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status.video_status }}",
+                    "rightValue": "ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5ad441a4-def7-4ece-8cdf-799770dbe6de"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "95dbe73f-465f-4401-aaac-7caf96096ccf",
+                    "leftValue": "={{ $json.status.video_status }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "error"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b028ee8b-4541-4688-9b11-87544ffe2b83",
+                    "leftValue": "={{ $json.status.video_status }}",
+                    "rightValue": "processing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "processing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -16,
+        272
+      ],
+      "id": "7e2cc89f-6600-4036-803d-621bf15b6335",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://bot-api.zapps.me/bot<token>/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "chatid"
+            },
+            {
+              "name": "text",
+              "value": "Đăng video lỗi"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        416
+      ],
+      "id": "110056f4-0c4d-47bc-a3cf-bd6fee02d86b",
+      "name": "Send Error",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "05aac7f4-13f1-43c2-b538-d59c48c9dc7c",
+              "leftValue": "=={{$json[\"Trạng thái\"]}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e2245487-12da-4d3e-86ce-27e68847b7e7",
+              "leftValue": "=={{$json[\"Trạng thái\"]}}",
+              "rightValue": "thành công",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "72ac5abd-f207-4089-91d4-ae52e6bb0bca",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload Session": {
+      "main": [
+        [
+          {
+            "node": "Upload video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload video": {
+      "main": [
+        [
+          {
+            "node": "Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Download Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get List Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get status": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Page ID": {
+      "main": [
+        [
+          {
+            "node": "Update Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Link Shopee": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status": {
+      "main": [
+        [
+          {
+            "node": "Wait 10s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get List Video": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video": {
+      "main": [
+        [
+          {
+            "node": "Upload Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s": {
+      "main": [
+        [
+          {
+            "node": "Get status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10s": {
+      "main": [
+        [
+          {
+            "node": "Get Link Shopee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment": {
+      "main": [
+        [
+          {
+            "node": "Wait 15s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 15s": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Page ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "90bdcaba-c579-4ddc-aa41-1a92c08c21a8",
+  "meta": {
+    "instanceId": "f236d3d34f832a1483109cc017cb2d21a46fdd28f4bfae98c953ada9b0590484"
+  },
+  "id": "qYxBhY5zS4Jh4mkX",
+  "tags": []
+}
