@@ -337,10 +337,10 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": 1795330513,
+          "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "bếp",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit#gid=1795330513"
+          "cachedResultName": "Tiktok",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sym6y6jbEinNUN8MiGY03-hRLpQIAY4yqnSFTTdNNvM/edit#gid=0"
         },
         "options": {}
       },
@@ -492,13 +492,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://bot-api.zapps.me/bot<token>/sendMessage",
+        "url": "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             {
               "name": "chat_id",
-              "value": "chatid"
+              "value": "<YOUR_CHAT_ID>"
             },
             {
               "name": "text",
@@ -520,7 +520,7 @@
         96
       ],
       "id": "4b53a299-9d0b-4620-b7ff-2a3d55836204",
-      "name": "Send message",
+      "name": "Send Telegram",
       "executeOnce": true
     },
     {
@@ -617,13 +617,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://bot-api.zapps.me/bot<token>/sendMessage",
+        "url": "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             {
               "name": "chat_id",
-              "value": "chatid"
+              "value": "<YOUR_CHAT_ID>"
             },
             {
               "name": "text",
@@ -640,7 +640,7 @@
         416
       ],
       "id": "110056f4-0c4d-47bc-a3cf-bd6fee02d86b",
-      "name": "Send Error",
+      "name": "Send Error Telegram",
       "executeOnce": false
     },
     {
@@ -814,7 +814,7 @@
       "main": [
         [
           {
-            "node": "Send message",
+            "node": "Send Telegram",
             "type": "main",
             "index": 0
           }
@@ -883,7 +883,7 @@
         ],
         [
           {
-            "node": "Send Error",
+            "node": "Send Error Telegram",
             "type": "main",
             "index": 0
           }
