@@ -17,6 +17,44 @@ $ARGUMENTS
 
 Lệnh này thêm các tính năng hoặc thực hiện cập nhật cho ứng dụng hiện có.
 
+---
+
+## Phối Hợp Với Sequential Thinking
+
+Workflow này **có thể** sử dụng Sequential Thinking để làm rõ bài toán trước khi sinh phương án.
+
+### Khi nên dùng Sequential Thinking
+
+Agent nên dùng Sequential Thinking nếu có một trong các dấu hiệu sau:
+
+- bài toán còn mơ hồ hoặc thiếu phạm vi rõ ràng
+- có nhiều ràng buộc kỹ thuật, thời gian, vận hành hoặc bảo trì
+- có nhiều hơn một hướng tiếp cận hợp lý
+- chủ đề liên quan đến kiến trúc, refactor lớn, chiến lược hệ thống, hoặc quyết định dài hạn
+- cần bóc tách tiêu chí đánh giá trước khi đề xuất phương án
+
+### Khi không cần dùng Sequential Thinking
+
+Agent có thể bỏ qua nếu:
+
+- câu hỏi nhỏ và phạm vi rất rõ
+- chỉ cần liệt kê nhanh vài ý tưởng đơn giản
+- không có tradeoff quan trọng cần phân tích
+
+### Vai trò của Sequential Thinking trong workflow này
+
+Nếu được dùng, Sequential Thinking chỉ có nhiệm vụ:
+
+- làm rõ vấn đề thật sự cần giải
+- tách mục tiêu, ràng buộc và giả định
+- xác định tiêu chí đánh giá phương án
+- đảm bảo các phương án khác nhau thực sự
+
+Sequential Thinking **không** thay thế workflow này.  
+Output cuối cùng vẫn phải theo đúng định dạng của `/brainstorm`.
+
+---
+
 ### Các Bước
 
 1. **Hiểu Trạng Thái Hiện Tại**
